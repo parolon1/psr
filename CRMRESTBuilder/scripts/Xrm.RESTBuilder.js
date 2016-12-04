@@ -862,6 +862,16 @@ Xrm.RESTBuilder.SetWebApiVersion = function () {
 }
 
 Xrm.RESTBuilder.ToggleWebApiFunctionality = function () {
+	Xrm.RESTBuilder.Actions = [];
+	Xrm.RESTBuilder.QueryFunctions = [];
+	Xrm.RESTBuilder.Functions = [];
+	Xrm.RESTBuilder.SelectedAction = null;
+	Xrm.RESTBuilder.SelectedFunction = null;
+	if ($("label[for='TypeRetrieve']").hasClass("ui-button")) {
+		$("#TypeRetrieve").prop("checked", "true").button("refresh");
+		Xrm.RESTBuilder.Type_Change();
+	}
+
 	$("#WebApiVersion").prop("disabled", true);
 	if (Xrm.RESTBuilder.CsdlLoaded) {
 		$("#TypeAction").button("option", "disabled", true);
@@ -1109,7 +1119,8 @@ Xrm.RESTBuilder.CreateInputParameters = function (item) {
 				break;
 		}
 
-		$("#InputParameters tbody").append("<tr><td>" + item.Parameters[i].Name + "</td><td>" + ctrl + "</td><td>" + item.Parameters[i].Optional + "</td></tr>");
+		$("#InputParameters tbody").append("<tr><td>" + item.Parameters[i].Name + "</td><td>" + ctrl + "</td><td>" + item.Parameters[i].Optional + "</td>" +
+			"<td><input type='checkbox' class='ParameterInclude' " + ((item.Parameters[i].Optional) ? "" : "checked disabled") + " /></td></tr>");
 	}
 
 	if ($.grep(item.Parameters, function (p) { return p.Type === "Edm.DateTimeOffset"; }).length > 0) {
@@ -2841,8 +2852,8 @@ Xrm.RESTBuilder.Action_XMLHTTP_WebApi = function (action, parameters) {
 		js.push("        if (this.status === 200) {");
 		js.push("            var results = JSON.parse(this.response);");
 	} else {
-		js.push("        if (this.status === 204) {");
-		js.push("            //Success - No Return Data - Do Something");
+		js.push("        if (this.status === 204) {\n");
+		js.push("            //Success - No Return Data - Do Something\n");
 	}
 	js.push("        }");
 	js.push("        else {");
@@ -4434,6 +4445,10 @@ Xrm.RESTBuilder.BuildParameters = function (item) {
 
 		//Skip creating for the "entity" parameter as the id & type are passed in the url
 		if (item.IsBound && parameter[0].Name === "entity") {
+			continue;
+		}
+
+		if (!$(tr).find("input:checkbox:last").is(":checked")) {
 			continue;
 		}
 
