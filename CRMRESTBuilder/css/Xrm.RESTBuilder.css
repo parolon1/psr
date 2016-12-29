@@ -340,6 +340,8 @@ body {
 .TopImage {
 	float: right;
 	margin-top: 5px;
+    border:none;
+    outline:none;
 }
 
 #TopTitle {
