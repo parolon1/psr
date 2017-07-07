@@ -1,7 +1,7 @@
 # CRM REST Builder
 A tool for CRM 2011/2013/2015/2016 Online &amp; On Premise to generate JavaScript code using the 2011 &amp; Web API REST endpoints.
 
-**Solution downloads are found on the [releases](https://github.com/jlattimer/CRMRESTBuilder/releases) page.**
+# Solution downloads are found on the [releases](https://github.com/jlattimer/CRMRESTBuilder/releases) page.
 
 
 ## Generate requests based on the metadata in your CRM environment
