@@ -414,6 +414,7 @@ Xrm.RESTBuilder.GetAllEntityMetadata = function () {
 
 	var entityFilter = new mdq.MetadataFilterExpression(mdq.LogicalOperator.And);
 	entityFilter.addCondition(semp.ObjectTypeCode, mdq.MetadataConditionOperator.GreaterThan, 0);
+
 	var entityProperties;
 	if (Xrm.RESTBuilder.CrmVersion[0] > 7) {
 		entityProperties = new mdq.MetadataPropertiesExpression(false, [emp.DisplayName, emp.SchemaName, emp.IsIntersect, emp.EntitySetName, emp.ObjectTypeCode, emp.MetadataId]);
@@ -692,7 +693,8 @@ Xrm.RESTBuilder.GetExpandedAttributeMetadata = function (names) {
 	var samp = mdq.SearchableAttributeMetadataProperties;
 	var emp = mdq.EntityMetadataProperties;
 	var amp = mdq.AttributeMetadataProperties;
-
+	if (names.length === 0) // ensuring 'names' doesn't end up as null which breaks the query
+		names.push("test");
 	var entityFilter = new mdq.MetadataFilterExpression(mdq.LogicalOperator.And);
 	entityFilter.addCondition(semp.LogicalName, mdq.MetadataConditionOperator.In, names);
 	var entityProperties = new mdq.MetadataPropertiesExpression(false, [emp.Attributes, emp.SchemaName]);
@@ -724,11 +726,13 @@ Xrm.RESTBuilder.GetExpandedAttributeMetadata = function (names) {
 };
 
 Xrm.RESTBuilder.GetExpandedAttributeMetadata_Response = function (entityMetadata) {
+
+	$("#SelectList2 li").remove();
+	$("#SelectList3 li").remove();
+	$("#SelectList4 li").remove();
+
 	if (entityMetadata.getEntityMetadata().length > 0) {
 		Xrm.RESTBuilder.CurrentEntityExpandedAttributes = entityMetadata.getEntityMetadata();
-		$("#SelectList2 li").remove();
-		$("#SelectList3 li").remove();
-		$("#SelectList4 li").remove();
 		var items = [];
 		for (var i = 0; i < Xrm.RESTBuilder.CurrentEntityOneToManyRelationships.length; i++) {
 			var otmEntity = $.grep(Xrm.RESTBuilder.CurrentEntityExpandedAttributes, function (e) { return e.LogicalName === Xrm.RESTBuilder.CurrentEntityOneToManyRelationships[i].ReferencingEntity; });
@@ -799,10 +803,10 @@ Xrm.RESTBuilder.GetExpandedAttributeMetadata_Response = function (entityMetadata
 		Xrm.RESTBuilder.SortSelectItems($("#SelectList4"));
 
 		Xrm.RESTBuilder.DisplaySelfReferencingNtoN();
-
-		$("#Accordion").accordion("option", "active", 0);
-		$.unblockUI();
 	}
+
+	$("#Accordion").accordion("option", "active", 0);
+	$.unblockUI();
 };
 
 Xrm.RESTBuilder.GetCsdl = function () {
