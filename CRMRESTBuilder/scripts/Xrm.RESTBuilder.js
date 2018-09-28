@@ -6442,13 +6442,13 @@ Xrm.RESTBuilder.CreateFilterSelect = function (type) {
 			options.push("<option value='[field] gt'>Is Greater Than</option>");
 			options.push("<option value='[field] ge'>Is Greater Than Or Equal To</option>");
 			options.push("<option value='[field] lt'>Is Less Than</option>");
-			options.push("<option value='[field] le'>Is Greater Than Or Equal To</option>");
+			options.push("<option value='[field] le'>Is Less Than Or Equal To</option>");
 			break;
 		case "Money":
 			options.push("<option value='gt'>Is Greater Than</option>");
 			options.push("<option value='ge'>Is Greater Than Or Equal To</option>");
 			options.push("<option value='lt'>Is Less Than</option>");
-			options.push("<option value='le'>Is Greater Than Or Equal To</option>");
+			options.push("<option value='le'>Is Less Than Or Equal To</option>");
 			break;
 		case "DateTime":
 			options.push("<option value='[field] gt'>After</option>");
