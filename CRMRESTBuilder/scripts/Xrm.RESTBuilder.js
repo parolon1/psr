@@ -883,12 +883,20 @@ Xrm.RESTBuilder.SetWebApiVersion = function () {
 		case "8.2":
 			$("#WebApiVersion").val("8.2");
 			$("#WebApiVersion option[value='9.0']").remove();
+			$("#WebApiVersion option[value='9.1']").remove();
 			if (Xrm.RESTBuilder.Type === "Create" || Xrm.RESTBuilder.Type === "Update") {
 				$("#FormattedValues").show();
 			}
 			break;
-		default: //9.0
+		case "9.0":
 			$("#WebApiVersion").val("9.0");
+			$("#WebApiVersion option[value='9.1']").remove();
+			if (Xrm.RESTBuilder.Type === "Create" || Xrm.RESTBuilder.Type === "Update") {
+				$("#FormattedValues").show();
+			}
+			break;
+		default: //9.1
+			$("#WebApiVersion").val("9.1");
 			if (Xrm.RESTBuilder.Type === "Create" || Xrm.RESTBuilder.Type === "Update") {
 				$("#FormattedValues").show();
 			}
