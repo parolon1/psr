@@ -3844,8 +3844,7 @@ Xrm.RESTBuilder.BuildObjectString_WebApi = function () {
 		switch (type) {
 			case "Double":
 			case "Decimal":
-				var decAttr = $.grep(Xrm.RESTBuilder.CurrentEntityAttributes, function (e) { return e.LogicalName === logical; });
-				js.push(Xrm.RESTBuilder.REST_Decimal(logical, val1, decAttr[0].Precision));
+				js.push(Xrm.RESTBuilder.REST_Decimal_WebApi(logical, val1));
 				break;
 			case "Money":
 				var doubAttr = $.grep(Xrm.RESTBuilder.CurrentEntityAttributes, function (e) { return e.LogicalName === logical; });
@@ -6623,6 +6622,14 @@ Xrm.RESTBuilder.REST_Decimal = function (schemaOrLogicalName, value, precision) 
 		return "entity." + schemaOrLogicalName + " = null;\n";
 	else
 		return "entity." + schemaOrLogicalName + " = parseFloat(" + value + ").toFixed(" + precision + ");\n";
+};
+
+//Create REST Decimal and Double/Float - Web API
+Xrm.RESTBuilder.REST_Decimal_WebApi = function (schemaOrLogicalName, value) {
+	if (value === "" || value === null)
+		return "entity." + schemaOrLogicalName + " = null;\n";
+	else
+		return "entity." + schemaOrLogicalName + " = " + value + ";\n";
 };
 
 //Create REST Boolean
