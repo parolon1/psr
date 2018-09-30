@@ -2,7 +2,6 @@
 Xrm.RESTBuilder = Xrm.RESTBuilder || { __namespace: true };
 
 Xrm.RESTBuilder.ODataPath = null;
-Xrm.RESTBuilder.CsdlLoaded = false;
 Xrm.RESTBuilder.CrmVersion = [];
 Xrm.RESTBuilder.CurrentEntityAttributes = [];
 Xrm.RESTBuilder.CurrentEntityOneToManyRelationships = [];
@@ -15,6 +14,8 @@ Xrm.RESTBuilder.AssociateEntityOneToManyRelationships = [];
 Xrm.RESTBuilder.AssociateEntityManyToManyRelationships = [];
 Xrm.RESTBuilder.CurrentEntityActions = [];
 
+Xrm.RESTBuilder.EntitySets = [];
+Xrm.RESTBuilder.EntityTypes = [];
 Xrm.RESTBuilder.Actions = [];
 Xrm.RESTBuilder.QueryFunctions = [];
 Xrm.RESTBuilder.Functions = [];
@@ -55,9 +56,6 @@ Xrm.RESTBuilder.FetchEditor = null;
 $(function () {
 	Xrm.RESTBuilder.GetCrmVersion();
 	Xrm.RESTBuilder.SetWebApiVersion();
-	if (Xrm.RESTBuilder.CrmVersion[0] > 7) {
-		Xrm.RESTBuilder.ToggleWebApiFunctionality();
-	}
 
 	//Make window text selectable in IE
 	window._UI_TEXT_SELECTABLE = "1";
@@ -546,6 +544,11 @@ Xrm.RESTBuilder.GetAttributeMetadata_Response = function (entityMetadata) {
 };
 
 Xrm.RESTBuilder.GetAlternateKeys = function (metadataId) {
+	if (Xrm.RESTBuilder.Endpoint !== "WebApi") {
+		Xrm.RESTBuilder.SetAlternateKeyState();
+		return;
+	}
+
 	Xrm.RESTBuilder.CurrentEntityAlternateKeys = [];
 	var req = new XMLHttpRequest();
 	req.open("GET", Xrm.Page.context.getClientUrl() + "/api/data/v" + $("#WebApiVersion option:selected").val() + "/EntityDefinitions(" + metadataId + ")/Keys?$select=LogicalName,KeyAttributes", true);
@@ -573,14 +576,17 @@ Xrm.RESTBuilder.GetAlternateKeys = function (metadataId) {
 
 Xrm.RESTBuilder.IsUnsearchable = function (schemaName) {
 	//Not sure if there is a better way to determine this, but these entities returned errors when manually attempting to query them
-	var entities = ["AuthorizationServer", "BusinessDataLocalizedLabel", "BusinessProcessFlowInstance", "CalendarRule", "ChildIncidentCount", "ComplexControl",
-		"DataPerformance", "DependencyFeature", "ImageDescriptor", "IntegrationStatus", "LookUpMapping", "MailboxTrackingFolder", "MultiEntitySearch", "MultiEntitySearchEntities",
-		"OfficeDocument", "Owner", "PartnerApplication", "PostRegarding", "PostRole", "PrincipalAttributeAccessMap", "PrincipalEntityMap", "PrincipalObjectAccessReadSnapshot",
-		"PrincipalSyncAttributeMap", "QueueItemCount", "QueueMemberCount", "RecordCountSnapshot", "RollupJob", "RollupProperties", "SharePointData", "SqlEncryptionAudit",
-		"Subscription", "SubscriptionClients", "SubscriptionManuallyTrackedObject", "SubscriptionStatisticsOffline", "SubscriptionStatisticsOutlook", "SubscriptionSyncEntryOffline",
-		"SubscriptionSyncEntryOutlook", "SubscriptionSyncInfo", "SubscriptionTrackingDeletedObject", "SyncAttributeMapping", "SyncAttributeMappingProfile", "SystemApplicationMetadata",
-		"SystemUserManagerMap", "SystemUserSyncMappingProfiles", "TeamSyncAttributeMappingProfiles", "TimeStampDateMapping", "TraceAssociation", "TraceRegarding",
-		"UserApplicationMetadata", "WorkflowWaitSubscription", "DeleveActionHub", "LocalConfigStore", "MetadataDifference", "RecommendedDocument"];
+	var entities = ["AppModuleMetadata", "AppModuleMetadataDependency", "AppModuleMetadataOperationLog", "AuthorizationServer", "BusinessDataLocalizedLabel",
+		"BusinessProcessFlowInstance", "CalendarRule", "ChildIncidentCount", "Commitment", "ComplexControl", "DelveActionHub", "DependencyFeature", "DocumentIndex",
+		"GlobalSearchConfiguration", "ImageDescriptor", "IntegrationStatus", "LookUpMapping", "msdyn_solutioncomponentdatasource", "MultiEntitySearch",
+		"MultiEntitySearchEntities", "MultiSelectAttributeOptionValues", "OfficeDocument", "OfficeGraphDocument", "Owner", "PartnerApplication", "PostRegarding",
+		"PostRole", "PrincipalAttributeAccessMap", "PrincipalEntityMap", "PrincipalObjectAccessReadSnapshot", "PrincipalSyncAttributeMap", "QueueItemCount",
+		"QueueMemberCount", "RecordCountSnapshot", "RibbonClientMetadata", "RollupJob", "RollupProperties", "RuntimeDependency", "SalesProcessInstance",
+		"SharedObjectsForRead", "SharePointData", "SimilarityRule", "SqlEncryptionAudit", "Subscription", "SubscriptionClients", "SubscriptionManuallyTrackedObject",
+		"SubscriptionStatisticsOffline", "SubscriptionStatisticsOutlook", "SubscriptionSyncEntryOffline", "SubscriptionSyncEntryOutlook", "SubscriptionSyncInfo",
+		"SubscriptionTrackingDeletedObject", "SyncAttributeMapping", "SyncAttributeMappingProfile", "SystemApplicationMetadata", "SystemUserManagerMap",
+		"SystemUserSyncMappingProfiles", "TeamSyncAttributeMappingProfiles", "TimeStampDateMapping", "TraceAssociation", "TraceRegarding", "UntrackedEmail",
+		"UserApplicationMetadata", "UserSearchFacet", "WorkflowWaitSubscription", "LocalConfigStore", "MetadataDifference", "RecommendedDocument"];
 
 	return ((entities.indexOf(schemaName) !== -1) ? true : false);
 }
@@ -806,27 +812,45 @@ Xrm.RESTBuilder.GetExpandedAttributeMetadata_Response = function (entityMetadata
 	}
 
 	$("#Accordion").accordion("option", "active", 0);
+
+	if (Xrm.RESTBuilder.CrmVersion[0] > 7) {
+		Xrm.RESTBuilder.ToggleWebApiFunctionality();
+	}
+
 	$.unblockUI();
 };
 
 Xrm.RESTBuilder.GetCsdl = function () {
 	var req = new XMLHttpRequest();
-	req.open("GET", Xrm.Page.context.getClientUrl() + "/api/data/v" + $("#WebApiVersion option:selected").val() + "/$metadata", true);
+	req.open("GET", Xrm.Page.context.getClientUrl() + "/api/data/v" + $("#WebApiVersion option:selected").val() + "/$metadata", false);
 	req.onreadystatechange = function () {
 		if (req.readyState === 4) {
 			if (req.status === 200) {
 				var csdl = req.responseXML;
+				Xrm.RESTBuilder.EntitySets = $(csdl).find("EntitySet").toArray();
+				Xrm.RESTBuilder.EntityTypes = $(csdl).find("EntityType").toArray();
+
+				// Update the EntitySetName attribute in the Entity drop down 
+				$("#EntityList > option").each(function () {
+					var logicalName = this.attributes["logicalname"].value;
+					var entities = $.grep(Xrm.RESTBuilder.EntitySets, function (e) {
+						var metaName = e.attributes["EntityType"].value;
+						var metaLogicalName = metaName.substr(metaName.lastIndexOf(".") + 1);
+						return metaLogicalName === logicalName;
+					});
+					if (entities.length === 0)
+						return;
+
+					this.attributes["entitysetname"].value = entities[0].attributes["Name"].value;
+				});
+
 				var actions = $(csdl).find("Action").toArray();
 				var functions = $(csdl).find("Function").toArray();
 				actions.forEach(Xrm.RESTBuilder.ProcessActions);
 				Xrm.RESTBuilder.ProcessFunctions(functions);
 
-				Xrm.RESTBuilder.CsdlLoaded = true;
-				if (Xrm.RESTBuilder.Endpoint === "WebApi") {
-					$("#TypeAction").button("option", "disabled", false);
-					$("#TypeFunction").button("option", "disabled", false);
-				}
-				$("#LoadingCsdl").hide();
+				$("#TypeAction").button("option", "disabled", false);
+				$("#TypeFunction").button("option", "disabled", false);
 				$("#WebApiVersion").prop("disabled", false);
 			}
 		}
@@ -884,11 +908,8 @@ Xrm.RESTBuilder.ToggleWebApiFunctionality = function () {
 	}
 
 	$("#WebApiVersion").prop("disabled", true);
-	if (Xrm.RESTBuilder.CsdlLoaded) {
-		$("#TypeAction").button("option", "disabled", true);
-		$("#TypeFunction").button("option", "disabled", true);
-	}
-	$("#LoadingCsdl").show();
+	$("#TypeAction").button("option", "disabled", true);
+	$("#TypeFunction").button("option", "disabled", true);
 	Xrm.RESTBuilder.GetCsdl();
 
 	if (Xrm.RESTBuilder.Type === "RetrieveMultiple") {
@@ -4974,11 +4995,9 @@ Xrm.RESTBuilder.Endpoint_Change = function () {
 		$("#LibrarySDKJQ").button("option", "disabled", true);
 		$("#LibraryXSVC").button("option", "disabled", true);
 		$("#TypePredefinedQuery").button("option", "disabled", false);
-		if (Xrm.RESTBuilder.CsdlLoaded) {
-			$("#TypeAction").button("option", "disabled", false);
-			$("#TypeFunction").button("option", "disabled", false);
-			$("#WebApiVersion").prop("disabled", false);
-		}
+		$("#TypeAction").button("option", "disabled", false);
+		$("#TypeFunction").button("option", "disabled", false);
+		$("#WebApiVersion").prop("disabled", false);
 		$("#FormattedValues").show();
 		$("#DetectChanges").show();
 		$("#AuthToken").show();
@@ -5529,13 +5548,27 @@ Xrm.RESTBuilder.AssociateEntity1_Change = function () {
 
 //AssociateEntity2 Change
 Xrm.RESTBuilder.AssociateEntity2_Change = function () {
+	$("#AssociateRelationship").find("option").remove();
 	var relationshipOptions = [];
 	relationshipOptions.push("<option value='' selfreferencing='false'></option>");
 	for (var i = 0; i < Xrm.RESTBuilder.AssociateEntityOneToManyRelationships.length; i++) {
 		if (Xrm.RESTBuilder.AssociateEntityOneToManyRelationships[i].ReferencingEntity === $("#AssociateEntity2 option:selected").attr("logicalname")) {
 			var selfReferencing1 = ((Xrm.RESTBuilder.CurrentEntityOneToManyRelationships[i].ReferencedEntity === Xrm.RESTBuilder.CurrentEntityOneToManyRelationships[i].ReferencingEntity) ? "Referenced" : "");
 			var schemaName1 = Xrm.RESTBuilder.AssociateEntityOneToManyRelationships[i].SchemaName;
-			relationshipOptions.push("<option value='" + selfReferencing1 + schemaName1 + "' webapivalue='" + schemaName1 +
+			var webApiValue = schemaName1
+			var entities = $.grep(Xrm.RESTBuilder.EntityTypes, function (e) {
+				return e.attributes.Name.value === $("#AssociateEntity1 option:selected").attr("logicalname");
+			});
+			if (entities.length !== 0) {
+				var navProps = $.grep($(entities[0]).children().filter("NavigationProperty"), function (e) {
+					return e.attributes.Name.value.toLowerCase() === schemaName1.toLowerCase();
+				});
+				if (navProps.length !== 0) {
+					webApiValue = navProps[0].attributes.Name.value;
+				}
+			}
+
+			relationshipOptions.push("<option value='" + selfReferencing1 + schemaName1 + "' webapivalue='" + webApiValue +
 				"' selfreferencing='" + ((selfReferencing1 === "") ? false : true) + "' referenced='" + Xrm.RESTBuilder.AssociateEntityOneToManyRelationships[i].ReferencedEntity +
 				"' referencing='" + Xrm.RESTBuilder.AssociateEntityOneToManyRelationships[i].ReferencingEntity + "'>(1:N) " + schemaName1 + "</option>");
 		}
@@ -5548,7 +5581,19 @@ Xrm.RESTBuilder.AssociateEntity2_Change = function () {
 				Xrm.RESTBuilder.AssociateEntityManyToManyRelationships[j].Entity2LogicalName === $("#AssociateEntity1 option:selected").attr("logicalname"))) {
 			var selfReferencing2 = ((Xrm.RESTBuilder.CurrentEntityManyToManyRelationships[j].Entity1LogicalName === Xrm.RESTBuilder.CurrentEntityManyToManyRelationships[j].Entity2LogicalName) ? "Referenced" : "");
 			var schemaName2 = Xrm.RESTBuilder.AssociateEntityManyToManyRelationships[j].SchemaName;
-			relationshipOptions.push("<option value='" + selfReferencing2 + schemaName2 + "' webapivalue='" + schemaName2 +
+			var webApiValue = schemaName2
+			var entities = $.grep(Xrm.RESTBuilder.EntityTypes, function (e) {
+				return e.attributes.Name.value === $("#AssociateEntity1 option:selected").attr("logicalname");
+			});
+			if (entities.length !== 0) {
+				var navProps = $.grep($(entities[0]).children().filter("NavigationProperty"), function (e) {
+					return e.attributes.Name.value.toLowerCase() === schemaName1.toLowerCase();
+				});
+				if (navProps.length !== 0) {
+					webApiValue = navProps[0].attributes.Name.value;
+				}
+			}
+			relationshipOptions.push("<option value='" + selfReferencing2 + schemaName2 + "' webapivalue='" + webApiValue +
 				"' selfreferencing='" + ((selfReferencing2 === "") ? false : true) + "'  referenced='" + Xrm.RESTBuilder.AssociateEntityManyToManyRelationships[j].ReferencedEntity +
 				"' referencing='" + Xrm.RESTBuilder.AssociateEntityManyToManyRelationships[j].ReferencingEntity + "'>(N:N) " + schemaName2 + "</option>");
 		}
@@ -6505,7 +6550,20 @@ Xrm.RESTBuilder.REST_Lookup = function (schemaOrLogicalName, id, entityName) {
 //Create REST Lookup and Customer - Web API
 Xrm.RESTBuilder.REST_Lookup_WebApi = function (schemaOrLogicalName, id, entitySetName, entityName) {
 	var name = (entityName === "" || entityName === null) ? "" : "_" + entityName;
-	return "entity[\"" + schemaOrLogicalName + name + "@odata.bind\"] = \"/" + entitySetName + "(" + id + ")\";\n";
+
+	var entities = $.grep(Xrm.RESTBuilder.EntityTypes, function (e) {
+		return e.attributes.Name.value === Xrm.RESTBuilder.EntityLogical;
+	});
+	var output = "entity[\"" + schemaOrLogicalName + name + "@odata.bind\"] = \"/" + entitySetName + "(" + id + ")\";\n";
+	if (entities.length === 0)
+		return output;
+	var navProps = $.grep($(entities[0]).children().filter("NavigationProperty"), function (e) {
+		return e.attributes.Name.value.toLowerCase() === (schemaOrLogicalName + name).toLowerCase();
+	});
+	if (navProps.length === 0)
+		return output;
+
+	return "entity[\"" + navProps[0].attributes.Name.value + "@odata.bind\"] = \"/" + entitySetName + "(" + id + ")\";\n";
 };
 
 //Create REST Picklist
