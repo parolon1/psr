@@ -593,14 +593,14 @@ Xrm.RESTBuilder.IsUnsearchable = function (schemaName) {
 
 Xrm.RESTBuilder.IsInternalAction = function (name) {
 	//Not sure if there is a better way to determine this, but these actions are returned in the CSDL but marked as internal only according to MSDN
-	var entities = ["AddChannelAccessProfilePrivileges", "SetFeatureStatus", "UpdateFeatureConfig"];
+	var entities = ["AddChannelAccessProfilePrivileges"];
 
 	return ((entities.indexOf(name) !== -1) ? true : false);
 }
 
 Xrm.RESTBuilder.IsInternalFunction = function (name) {
 	//Not sure if there is a better way to determine this, but these functions are returned in the CSDL but marked as internal only according to MSDN
-	var entities = ["RetrieveChannelAccessProfilePrivileges"];
+	var entities = ["RetrieveChannelAccessProfilePrivileges", "CloneMobileOfflineProfile"];
 
 	return ((entities.indexOf(name) !== -1) ? true : false);
 }
