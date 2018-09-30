@@ -415,9 +415,9 @@ Xrm.RESTBuilder.GetAllEntityMetadata = function () {
 
 	var entityProperties;
 	if (Xrm.RESTBuilder.CrmVersion[0] > 7) {
-		entityProperties = new mdq.MetadataPropertiesExpression(false, [emp.DisplayName, emp.SchemaName, emp.IsIntersect, emp.EntitySetName, emp.ObjectTypeCode, emp.MetadataId]);
+		entityProperties = new mdq.MetadataPropertiesExpression(false, [emp.PrimaryIdAttribute, emp.DisplayName, emp.SchemaName, emp.IsIntersect, emp.EntitySetName, emp.ObjectTypeCode, emp.MetadataId]);
 	} else {
-		entityProperties = new mdq.MetadataPropertiesExpression(false, [emp.DisplayName, emp.SchemaName, emp.IsIntersect, emp.MetadataId]);
+		entityProperties = new mdq.MetadataPropertiesExpression(false, [emp.PrimaryIdAttribute, emp.DisplayName, emp.SchemaName, emp.IsIntersect, emp.MetadataId]);
 	}
 	var labelQuery = new mdq.LabelQueryExpression([window.parent.Xrm.Page.context.getUserLcid()]);
 	var query = new mdq.EntityQueryExpression(
@@ -450,7 +450,7 @@ Xrm.RESTBuilder.GetAllEntityMetadata_Response = function (response) {
 		}
 		options.push("<option EntitySetName='" + entitySetName + "' LogicalName='" + response.getEntityMetadata()[i].LogicalName + "' ObjectTypeCode='" + response.getEntityMetadata()[i].ObjectTypeCode +
 			"' value='" + response.getEntityMetadata()[i].SchemaName + "' title='" + Xrm.RESTBuilder.GetLabel(response.getEntityMetadata()[i].DisplayName) + "' IsIntersect='" + response.getEntityMetadata()[i].IsIntersect +
-			"' metadataid='" + response.getEntityMetadata()[i].MetadataId + "'>" + response.getEntityMetadata()[i].SchemaName + "</option>");
+			"' metadataid='" + response.getEntityMetadata()[i].MetadataId + "' PrimaryIdAttribute='" + response.getEntityMetadata()[i].PrimaryIdAttribute + "'>" + response.getEntityMetadata()[i].SchemaName + "</option>");
 	}
 	$("#EntityList").html(options.join(""));
 	Xrm.RESTBuilder.SortSelect($("#EntityList")[0]);
@@ -4555,16 +4555,19 @@ Xrm.RESTBuilder.BuildParameters = function (item) {
 				parameters.push("parameters." + parameter[0].Name + " = \"" + guidValue + "\";\n");
 				break;
 			default:
+				var primaryIdAttribute = Xrm.RESTBuilder.GetPrimaryIdAttribute(parameter[0].Name.toLowerCase());
+				if (primaryIdAttribute === "")
+					primaryIdAttribute = "REPLACE_WITH_PRIMARY_ID_ATTRIBUTE";
 				if (Xrm.RESTBuilder.IsParameterEntity(parameter[0].Type)) {
 					//Entity
 					parameters.push("var " + parameter[0].Name.toLowerCase() + " = {};\n");
-					parameters.push(parameter[0].Name.toLowerCase() + ".primarykeyid = \"00000000-0000-0000-0000-000000000000\";\n");
+					parameters.push(parameter[0].Name.toLowerCase() + "." + primaryIdAttribute + " = \"00000000-0000-0000-0000-000000000000\";\n");
 					parameters.push(parameter[0].Name.toLowerCase() + "[\"@odata.type\"] = \"Microsoft.Dynamics.CRM." + Xrm.RESTBuilder.ParameterTypeToEntityName(parameter[0].Type) + "\";\n");
 					parameters.push("parameters." + parameter[0].Name + " = " + parameter[0].Name.toLowerCase() + ";\n");
 				} else if (Xrm.RESTBuilder.IsParameterCollection(item.Parameters[i].Type)) {
 					//Collection of entities
 					parameters.push("var " + parameter[0].Name.toLowerCase() + "1 = {};\n");
-					parameters.push(parameter[0].Name.toLowerCase() + "1.primarykeyid = \"00000000-0000-0000-0000-000000000000\";\n");
+					parameters.push(parameter[0].Name.toLowerCase() + "1." + primaryIdAttribute + " = \"00000000-0000-0000-0000-000000000000\";\n");
 					parameters.push(parameter[0].Name.toLowerCase() + "1[\"@odata.type\"] = \"Microsoft.Dynamics.CRM." + Xrm.RESTBuilder.ParameterTypeToEntityName(parameter[0].Type) + "\";\n");
 					parameters.push("parameters." + parameter[0].Name + " = [" + parameter[0].Name.toLowerCase() + "1];\n");
 				} else {
@@ -4592,7 +4595,7 @@ Xrm.RESTBuilder.ParameterTypeToEntityName = function (type) {
 	type = type.replace("Collection(", "");
 	type = type.replace(")", "");
 	type = type.replace("mscrm.", "");
-	type = type.replace("crmbaseentity", "entitylogicalname");
+	type = type.replace("crmbaseentity", "REPLACE_WITH_ENTITY_LOGICAL_NAME");
 
 	return type;
 }
@@ -6477,6 +6480,14 @@ Xrm.RESTBuilder.GetEntitySetName = function (name) {
 	var names = $.grep($("#EntityList option"), function (e) { return $(e).val() === name; });
 	if (names.length === 1) {
 		return $(names[0]).attr("entitysetname");
+	}
+	return "";
+}
+
+Xrm.RESTBuilder.GetPrimaryIdAttribute = function (name) {
+	var names = $.grep($("#EntityList option"), function (e) { return $(e).attr("logicalname") === name; });
+	if (names.length === 1) {
+		return $(names[0]).attr("PrimaryIdAttribute");
 	}
 	return "";
 }
