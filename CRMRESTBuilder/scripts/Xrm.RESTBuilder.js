@@ -3624,7 +3624,7 @@ Xrm.RESTBuilder.GenerateResultVars_WebApi = function (selects, expand, spaces) {
 		var selectFields = selects.replace("?$select=", "").split(",");
 		for (var i = 0; i < selectFields.length; i++) {
 			var field = selectFields[i];
-			if (field.indexOf("_value") !== -1) {
+			if (field.charAt(0) === "_" && field.indexOf("_value") !== -1) {
 				field = field.substring(1, field.length - 6);
 			}
 			var selectType = $.grep(Xrm.RESTBuilder.CurrentEntityAttributes, function (e) { return e.LogicalName === field; })[0].AttributeType;
