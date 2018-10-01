@@ -3434,7 +3434,7 @@ Xrm.RESTBuilder.ShowResults = function (results) {
 		$("#Results").append("<div id='ResultTree'></div>");
 		$("#ResultTree").jsontree(JSON.stringify(results, null, 4));
 	} else if ($("#ResultTypePlain:checked").val()) {
-		$("#ResponseObject").append(JSON.stringify(results, null, 4));
+		$("#ResponseObject").append("<xmp style='display:inline;white-space:pre-wrap; word-wrap:break-word;display:inline;'>" + JSON.stringify(results, null, 4) + "</xmp>");
 	}
 
 	if (Xrm.RESTBuilder.Endpoint === "2011") {
@@ -4790,7 +4790,6 @@ Xrm.RESTBuilder.ValidateFetchXml = function (xml) {
 		$.parseXML(xml);
 		return true;
 	} catch (e) {
-		Xrm.RESTBuilder.DisplayAlert("Invalid FetchXML");
 		return false;
 	}
 }
@@ -5346,6 +5345,7 @@ Xrm.RESTBuilder.CreateRequest_Click = function () {
 		case "PredefinedQuery":
 			var valid = Xrm.RESTBuilder.ValidateFetchXml(Xrm.RESTBuilder.FetchEditor.getValue());
 			if (!valid) {
+				Xrm.RESTBuilder.DisplayAlert("Invalid FetchXML");
 				return;
 			}
 			Xrm.RESTBuilder.PredefinedQuery(Xrm.RESTBuilder.Library);
