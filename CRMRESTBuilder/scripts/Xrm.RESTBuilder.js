@@ -6392,7 +6392,7 @@ Xrm.RESTBuilder.CreateTimePicker = function () {
 	times.push("<option value='22:00:00'>10:00pm</option>");
 	times.push("<option value='22:30:00'>10:30pm</option>");
 	times.push("<option value='23:00:00'>11:00pm</option>");
-	times.push("<option value='24:30:00'>11:30pm</option>");
+	times.push("<option value='23:30:00'>11:30pm</option>");
 	times.push("</select>");
 	return times.join("");
 };
