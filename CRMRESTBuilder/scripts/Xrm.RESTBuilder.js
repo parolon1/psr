@@ -822,7 +822,7 @@ Xrm.RESTBuilder.GetExpandedAttributeMetadata_Response = function (entityMetadata
 
 Xrm.RESTBuilder.GetCsdl = function () {
 	var req = new XMLHttpRequest();
-	req.open("GET", Xrm.Page.context.getClientUrl() + "/api/data/v" + $("#WebApiVersion option:selected").val() + "/$metadata", false);
+	req.open("GET", Xrm.Page.context.getClientUrl() + "/api/data/v" + $("#WebApiVersion option:selected").val() + "/$metadata", true);
 	req.onreadystatechange = function () {
 		if (req.readyState === 4) {
 			if (req.status === 200) {
@@ -852,6 +852,7 @@ Xrm.RESTBuilder.GetCsdl = function () {
 				$("#TypeAction").button("option", "disabled", false);
 				$("#TypeFunction").button("option", "disabled", false);
 				$("#WebApiVersion").prop("disabled", false);
+				$.unblockUI();
 			}
 		}
 	};
@@ -905,15 +906,15 @@ Xrm.RESTBuilder.SetWebApiVersion = function () {
 }
 
 Xrm.RESTBuilder.ToggleWebApiFunctionality = function () {
+	Xrm.RESTBuilder.Block();
+
 	Xrm.RESTBuilder.Actions = [];
 	Xrm.RESTBuilder.QueryFunctions = [];
 	Xrm.RESTBuilder.Functions = [];
+	Xrm.RESTBuilder.EntitySets = [];
+	Xrm.RESTBuilder.EntityTypes = [];
 	Xrm.RESTBuilder.SelectedAction = null;
 	Xrm.RESTBuilder.SelectedFunction = null;
-	if ($("label[for='TypeRetrieve']").hasClass("ui-button")) {
-		$("#TypeRetrieve").prop("checked", "true").button("refresh");
-		Xrm.RESTBuilder.Type_Change();
-	}
 
 	$("#WebApiVersion").prop("disabled", true);
 	$("#TypeAction").button("option", "disabled", true);
@@ -4937,7 +4938,9 @@ Xrm.RESTBuilder.SetAlternateKeyState = function () {
 	if ($("#AlternateKeyRetrieve").is(":visible")) {
 		$("#AlternateKeyRetrieve").hide();
 	}
-	$("#RetrieveGUID").show();
+	if (Xrm.RESTBuilder.Type === "Retrieve") {
+		$("#RetrieveGUID").show();
+	}
 	if ($("#AlternateKeyUpdate").is(":visible")) {
 		$("#AlternateKeyUpdate").hide();
 	}
@@ -6318,7 +6321,8 @@ Xrm.RESTBuilder.Block = function () {
 			"-moz-border-radius": "10px",
 			opacity: .5,
 			color: "#fff"
-		}
+		},
+		ignoreIfBlocked: true
 	});
 };
 
